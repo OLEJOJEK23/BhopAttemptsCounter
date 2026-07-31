@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:tryes_counter/features/map_log_watcher/map_log_watcher.dart';
+import 'package:tryes_counter/features/attempt_counter/key_polling_counter.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -11,13 +13,41 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late final MapLogWatcher _mapLogWatcher = MapLogWatcher(
-    logFilePath: 'C:/Program Files (x86)/Steam/steamapps/common/Counter-Strike Global Offensive/game/csgo/console.log',
-  );
+  late final MapLogWatcher _mapLogWatcher;
+  late final KeyPollingCounter _keyPollingCounter;
+  StreamSubscription? _mapSubscription;
+
+  String? _currentMap;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _mapLogWatcher = MapLogWatcher(
+      logFilePath: 'C:/Program Files (x86)/Steam/steamapps/common/Counter-Strike Global Offensive/game/csgo/console.log',
+    );
+    
+    _keyPollingCounter = KeyPollingCounter();
+    _keyPollingCounter.init();
+
+    _mapSubscription = _mapLogWatcher.mapNameStream.listen((mapName) {
+      setState(() {
+        _currentMap = mapName;
+      });
+      
+      // --- ГЛАВНОЕ ИЗМЕНЕНИЕ ---
+      // При получении новой карты, мы сбрасываем счетчик
+      // и ГАРАНТИРОВАННО включаем его.
+      _keyPollingCounter.reset();
+      _keyPollingCounter.isEnabled = true;
+    });
+  }
 
   @override
   void dispose() {
+    _mapSubscription?.cancel();
     _mapLogWatcher.dispose();
+    _keyPollingCounter.dispose();
     super.dispose();
   }
 
@@ -33,29 +63,24 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text('Current map:', style: TextStyle(fontSize: 24)),
-            const SizedBox(height: 16),
-            StreamBuilder<String>(
-              // Получаем стрим напрямую из MapLogWatcher
-              stream: _mapLogWatcher.mapNameStream,
+            const SizedBox(height: 8),
+            Text(
+              _currentMap ?? 'Waiting for map...',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: _currentMap != null ? Colors.black : Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 40),
+            const Text('Attempts:', style: TextStyle(fontSize: 24)),
+            const SizedBox(height: 8),
+            StreamBuilder<int>(
+              stream: _keyPollingCounter.attemptStream,
+              initialData: 0,
               builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Text(
-                    '${snapshot.error}',
-                    style: const TextStyle(color: Colors.red, fontSize: 16),
-                    textAlign: TextAlign.center,
-                  );
-                }
-                if (snapshot.hasData) {
-                  return Text(
-                    snapshot.data!,
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  );
-                } else {
-                  return const Text(
-                    'Waiting for map change...',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  );
-                }
+                return Text(
+                  '${snapshot.data}',
+                  style: Theme.of(context).textTheme.headlineLarge,
+                );
               },
             ),
           ],
