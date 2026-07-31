@@ -10,10 +10,6 @@ class KeyPollingCounter {
   Timer? _pollTimer;
   int _targetVkCode = VK_LMENU;
   bool _wasKeyDown = false;
-
-  // --- НОВОЕ ПОЛЕ ---
-  // Публичный "выключатель" для нашего счетчика.
-  // По умолчанию он выключен.
   bool isEnabled = false;
 
   void setTargetKey(int vkCode) {
@@ -27,8 +23,6 @@ class KeyPollingCounter {
   }
 
   void _checkKeyState() {
-    // --- НОВОЕ УСЛОВИЕ ---
-    // Если счетчик выключен, даже не пытаемся ничего проверять.
     if (!isEnabled) return;
 
     try {
@@ -36,15 +30,19 @@ class KeyPollingCounter {
       final isKeyDown = (state & 0x8000) != 0;
 
       if (isKeyDown && !_wasKeyDown) {
-        if (isCsgoInForeground()) {
-          _counter++;
-          _controller.add(_counter);
-        }
+        // --- ЗАЩИТА ОТ ALT+TAB ---
+        Timer(const Duration(milliseconds: 150), () {
+          final tabState = GetAsyncKeyState(VK_TAB);
+          final isTabDown = (tabState & 0x8000) != 0;
+          if (!isTabDown && isCsgoInForeground()) {
+            _counter++;
+            _controller.add(_counter);
+          }
+        });
       }
 
       _wasKeyDown = isKeyDown;
     } catch (e) {
-      // ignore: avoid_print
       print('Ошибка при опросе состояния клавиши: $e');
     }
   }

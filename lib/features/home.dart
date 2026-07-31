@@ -34,10 +34,6 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         _currentMap = mapName;
       });
-      
-      // --- ГЛАВНОЕ ИЗМЕНЕНИЕ ---
-      // При получении новой карты, мы сбрасываем счетчик
-      // и ГАРАНТИРОВАННО включаем его.
       _keyPollingCounter.reset();
       _keyPollingCounter.isEnabled = true;
     });

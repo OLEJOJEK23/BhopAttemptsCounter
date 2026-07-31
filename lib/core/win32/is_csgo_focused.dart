@@ -10,8 +10,7 @@ bool isCsgoInForeground() {
   try {
     GetWindowText(foregroundWindow, buffer, 256);
     final windowTitle = buffer.toDartString();
-    
-    // Сравниваем заголовок с тем, что нам нужен.
+
     return windowTitle == 'Counter-Strike 2';
   } finally {
     free(buffer);
