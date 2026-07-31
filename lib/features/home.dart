@@ -18,6 +18,9 @@ class _MyHomePageState extends State<MyHomePage> {
   StreamSubscription? _mapSubscription;
 
   String? _currentMap;
+  
+  String _boundKeyName = 'Left Alt';
+  bool _isRebinding = false;
 
   @override
   void initState() {
@@ -36,6 +39,22 @@ class _MyHomePageState extends State<MyHomePage> {
       });
       _keyPollingCounter.reset();
       _keyPollingCounter.isEnabled = true;
+    });
+  }
+
+  /// Метод, который запускает процесс перепривязки
+  Future<void> _rebindKey() async {
+    setState(() {
+      _isRebinding = true;
+    });
+
+    // Ждем, пока пользователь нажмет клавишу
+    final newKeyName = await _keyPollingCounter.startRebinding();
+
+    // Обновляем UI
+    setState(() {
+      _boundKeyName = newKeyName;
+      _isRebinding = false;
     });
   }
 
@@ -78,6 +97,17 @@ class _MyHomePageState extends State<MyHomePage> {
                   style: Theme.of(context).textTheme.headlineLarge,
                 );
               },
+            ),
+            const SizedBox(height: 50),
+            const Divider(),
+            const SizedBox(height: 20),
+            Text('Bound Key: $_boundKeyName', style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _isRebinding ? null : _rebindKey,
+              child: Text(
+                _isRebinding ? 'Press any key...' : 'Change Key',
+              ),
             ),
           ],
         ),
