@@ -1,7 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:tryes_counter/features/map_log_watcher/map_log_watcher.dart';
 import 'package:tryes_counter/features/attempt_counter/key_polling_counter.dart';
+import 'package:tryes_counter/features/map_log_watcher/map_log_watcher.dart';
+import 'package:tryes_counter/widgets/history_list_view.dart';
+import 'package:tryes_counter/widgets/info_card.dart';
+import 'package:tryes_counter/widgets/rotating_settings_icon.dart';
+import 'package:tryes_counter/widgets/settings_bottom_sheet.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -18,21 +23,49 @@ class _MyHomePageState extends State<MyHomePage> {
   StreamSubscription? _mapSubscription;
 
   String? _currentMap;
-  
   String _boundKeyName = 'Left Alt';
-  bool _isRebinding = false;
+  final TextEditingController _searchController = TextEditingController();
+
+  final List<MapAttempt> _testHistory = [
+    MapAttempt(
+        mapName: 'bhop_sahara_v2',
+        attempts: 128,
+        date: DateTime.now().subtract(const Duration(days: 1))),
+    MapAttempt(
+        mapName: 'bhop_arcane',
+        attempts: 74,
+        date: DateTime.now().subtract(const Duration(days: 2))),
+    MapAttempt(
+        mapName: 'bhop_japan_fix',
+        attempts: 256,
+        date: DateTime.now().subtract(const Duration(days: 3))),
+    MapAttempt(
+        mapName: 'bhop_monster_jam',
+        attempts: 42,
+        date: DateTime.now().subtract(const Duration(days: 4))),
+    MapAttempt(
+        mapName: 'bhop_abyss',
+        attempts: 312,
+        date: DateTime.now().subtract(const Duration(days: 5))),
+    MapAttempt(
+        mapName: 'bhop_space_race',
+        attempts: 99,
+        date: DateTime.now().subtract(const Duration(days: 6))),
+    MapAttempt(
+        mapName: 'bhop_utopia',
+        attempts: 150,
+        date: DateTime.now().subtract(const Duration(days: 7))),
+  ];
 
   @override
   void initState() {
     super.initState();
-    
     _mapLogWatcher = MapLogWatcher(
-      logFilePath: 'C:/Program Files (x86)/Steam/steamapps/common/Counter-Strike Global Offensive/game/csgo/console.log',
+      logFilePath:
+          'C:/Program Files (x86)/Steam/steamapps/common/Counter-Strike Global Offensive/game/csgo/console.log',
     );
-    
     _keyPollingCounter = KeyPollingCounter();
     _keyPollingCounter.init();
-
     _mapSubscription = _mapLogWatcher.mapNameStream.listen((mapName) {
       setState(() {
         _currentMap = mapName;
@@ -42,20 +75,22 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  /// Метод, который запускает процесс перепривязки
-  Future<void> _rebindKey() async {
-    setState(() {
-      _isRebinding = true;
-    });
-
-    // Ждем, пока пользователь нажмет клавишу
+  Future<String> _rebindKey() async {
     final newKeyName = await _keyPollingCounter.startRebinding();
-
-    // Обновляем UI
     setState(() {
       _boundKeyName = newKeyName;
-      _isRebinding = false;
     });
+    return newKeyName;
+  }
+
+  void _showSettings() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SettingsBottomSheet(
+          onRebindKey: _rebindKey, boundKeyName: _boundKeyName),
+    );
   }
 
   @override
@@ -63,6 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _mapSubscription?.cancel();
     _mapLogWatcher.dispose();
     _keyPollingCounter.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -70,44 +106,91 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        leading: const Icon(Icons.map_outlined),
+        title: Row(children: [
+          const Padding(
+              padding: EdgeInsets.only(right: 16.0),
+              child: Text('Bhop Counter')),
+          Expanded(
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: BorderRadius.circular(20)),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10.0),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                  hintText: 'Search...',
+                  border: InputBorder.none,
+                  suffixIcon: IconButton(
+                      icon:
+                          Icon(Icons.clear, color: Colors.grey[600], size: 20),
+                      onPressed: () => _searchController.clear()),
+                ),
+              ),
+            ),
+          ),
+        ]),
+        actions: [
+          RotatingSettingsIcon(onPressed: _showSettings),
+          const SizedBox(width: 8)
+        ],
       ),
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('Current map:', style: TextStyle(fontSize: 24)),
-            const SizedBox(height: 8),
-            Text(
-              _currentMap ?? 'Waiting for map...',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: _currentMap != null ? Colors.black : Colors.grey,
-              ),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                    child: InfoCard(
+                        icon: Icons.leaderboard_outlined,
+                        title: 'Maps Tracked',
+                        child: Text('7',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(fontWeight: FontWeight.w500)))),
+                const SizedBox(width: 16),
+                Expanded(
+                    child: InfoCard(
+                        icon: Icons.calculate_outlined,
+                        title: 'Total Attempts',
+                        child: Text('961',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(fontWeight: FontWeight.w500)))),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: InfoCard(
+                    icon: Icons.repeat_one,
+                    title: 'Current map',
+                    child: Text(
+                      _currentMap ?? 'Waiting for map...',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 40),
-            const Text('Attempts:', style: TextStyle(fontSize: 24)),
+            const SizedBox(height: 24),
+            Text('History',
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            StreamBuilder<int>(
-              stream: _keyPollingCounter.attemptStream,
-              initialData: 0,
-              builder: (context, snapshot) {
-                return Text(
-                  '${snapshot.data}',
-                  style: Theme.of(context).textTheme.headlineLarge,
-                );
-              },
-            ),
-            const SizedBox(height: 50),
-            const Divider(),
-            const SizedBox(height: 20),
-            Text('Bound Key: $_boundKeyName', style: const TextStyle(fontSize: 18)),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _isRebinding ? null : _rebindKey,
-              child: Text(
-                _isRebinding ? 'Press any key...' : 'Change Key',
-              ),
+            Expanded(
+              child: HistoryListView(attempts: _testHistory),
             ),
           ],
         ),
