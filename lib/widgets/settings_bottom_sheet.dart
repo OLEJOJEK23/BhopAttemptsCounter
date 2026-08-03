@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:tryes_counter/core/theme/theme_manager.dart';
 
 class SettingsBottomSheet extends StatefulWidget {
   final Future<String> Function() onRebindKey;
@@ -76,23 +75,6 @@ class _SettingsBottomSheetState extends State<SettingsBottomSheet> {
                 ),
               ),
               const Divider(height: 30),
-              ValueListenableBuilder<ThemeMode>(
-                valueListenable: ThemeManager.instance,
-                builder: (context, themeMode, child) {
-                  final isDarkMode = themeMode == ThemeMode.dark;
-                  return ListTile(
-                    leading: Icon(
-                        isDarkMode ? Icons.brightness_7 : Icons.brightness_4),
-                    title: const Text('Dark Mode'),
-                    trailing: Switch(
-                      value: isDarkMode,
-                      onChanged: (value) {
-                        ThemeManager.instance.toggleTheme(value);
-                      },
-                    ),
-                  );
-                },
-              ),
             ],
           ),
         );

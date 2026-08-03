@@ -1,12 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tryes_counter/features/attempt_counter/key_polling_counter.dart';
 import 'package:tryes_counter/features/map_log_watcher/map_log_watcher.dart';
 import 'package:tryes_counter/widgets/history_list_view.dart';
 import 'package:tryes_counter/widgets/info_card.dart';
 import 'package:tryes_counter/widgets/rotating_settings_icon.dart';
 import 'package:tryes_counter/widgets/settings_bottom_sheet.dart';
+
+import '../core/blocks/theme/theme_cubit.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -134,6 +137,27 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ]),
         actions: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 400),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return ScaleTransition(scale: animation, child: child);
+            },
+            child: IconButton(
+              key: ValueKey<bool>(context.watch<ThemeCubit>().state.isDark),
+              icon: Icon(
+                context.watch<ThemeCubit>().state.isDark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                size: 24,
+              ),
+              tooltip: context.watch<ThemeCubit>().state.isDark
+                  ? 'Переключить на светлую тему'
+                  : 'Переключить на тёмную тему',
+              onPressed: () {
+                context.read<ThemeCubit>().toggleTheme();
+              },
+            ),
+          ),
           RotatingSettingsIcon(onPressed: _showSettings),
           const SizedBox(width: 8)
         ],

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:tryes_counter/core/theme/theme_manager.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tryes_counter/core/blocks/theme/theme_cubit.dart';
+import 'package:tryes_counter/theme/theme.dart';
 
 import 'features/home.dart';
 
@@ -8,25 +10,14 @@ class BhopAttemptsCounter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: ThemeManager.instance,
-      builder: (context, themeMode, child) {
+    return BlocBuilder<ThemeCubit, ThemeState>(
+      builder: (context, state) {
         return MaterialApp(
           title: 'Bhop Attempts Counter',
           debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            brightness: Brightness.light,
-            primarySwatch: Colors.blue,
-            scaffoldBackgroundColor: Colors.grey[100],
-            cardColor: Colors.white,
-          ),
-          darkTheme: ThemeData(
-            brightness: Brightness.dark,
-            primarySwatch: Colors.blue,
-            scaffoldBackgroundColor: const Color(0xFF121212),
-            cardColor: const Color(0xFF1E1E1E),
-          ),
-          themeMode: themeMode,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: state.isDark ? ThemeMode.dark : ThemeMode.light,
           home: const MyHomePage(title: 'Bhop Attempts Counter'),
         );
       },
